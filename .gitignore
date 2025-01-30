@@ -52,6 +52,9 @@ profile-*
 .vscode
 *code-workspace
 
+# vim
+~
+
 # clinic
 profile*
 *clinic*
