@@ -18,6 +18,11 @@ type Roll = {
     total: number
 };
 
+const env = z.object({
+  HOST: z.string(),
+  PORT: z.coerce.number(),
+}).parse(process.env);
+
 const fastify = Fastify({
   logger: true
 });
@@ -73,7 +78,7 @@ fastify.post('/', async (request) => {
 });
 
 try {
-  await fastify.listen({ port: 3000 })
+  await fastify.listen({ host: env.HOST, port: env.PORT })
 } catch (err) {
   fastify.log.error(err)
   process.exit(1)
