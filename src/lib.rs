@@ -86,56 +86,58 @@ pub struct RollResponse {
     rolls: Vec<Rolls>,
 }
 
-pub fn roll_dice(roll_request: RollRequest) -> Result<RollResponse, RollRequestErrors> {
-    let roll_request = match validate_roll_request(roll_request) {
-        Ok(ok) => ok,
-        Err(err) => return Err(err),
-    };
-
-    let mut rng = rand::rng();
-    let mut roll_response = RollResponse { rolls: Vec::new() };
-
-    for dice in roll_request.dice.iter() {
-        let mut rolls = Vec::new();
-        let mut rolls_total = dice.modifier;
-
-        for _ in 0..dice.count {
-            let roll = rng.random_range(1..=dice.sides);
-            rolls.push(roll);
-            rolls_total += roll
+impl RollRequest {
+    fn validate_roll_request(roll_request: RollRequest) -> Result<RollRequest, RollRequestErrors> {
+        for dice in roll_request.dice.iter() {
+            if dice.sides < DICE_CONSTRAINTS.sides.lower_bound
+                || dice.sides > DICE_CONSTRAINTS.sides.upper_bound
+            {
+                return Err(RollRequestErrors::InvalidDiceSides { value: dice.sides });
+            }
+            if dice.modifier < DICE_CONSTRAINTS.modifier.lower_bound
+                || dice.modifier > DICE_CONSTRAINTS.modifier.upper_bound
+            {
+                return Err(RollRequestErrors::InvalidDiceModifier {
+                    value: dice.modifier,
+                });
+            }
+            if dice.count < DICE_CONSTRAINTS.count.lower_bound
+                || dice.count > DICE_CONSTRAINTS.count.upper_bound
+            {
+                return Err(RollRequestErrors::InvalidDiceCount { value: dice.count });
+            }
         }
-        roll_response.rolls.push(Rolls {
-            count: dice.count,
-            sides: dice.sides,
-            modifier: dice.modifier,
-            total: rolls_total,
-            rolls,
-        });
+
+        Ok(roll_request)
     }
 
-    Ok(roll_response)
-}
+    pub fn roll_dice(self) -> Result<RollResponse, RollRequestErrors> {
+        let roll_request = match RollRequest::validate_roll_request(self) {
+            Ok(ok) => ok,
+            Err(err) => return Err(err),
+        };
 
-fn validate_roll_request(roll_request: RollRequest) -> Result<RollRequest, RollRequestErrors> {
-    for dice in roll_request.dice.iter() {
-        if dice.sides < DICE_CONSTRAINTS.sides.lower_bound
-            || dice.sides > DICE_CONSTRAINTS.sides.upper_bound
-        {
-            return Err(RollRequestErrors::InvalidDiceSides { value: dice.sides });
-        }
-        if dice.modifier < DICE_CONSTRAINTS.modifier.lower_bound
-            || dice.modifier > DICE_CONSTRAINTS.modifier.upper_bound
-        {
-            return Err(RollRequestErrors::InvalidDiceModifier {
-                value: dice.modifier,
+        let mut rng = rand::rng();
+        let mut roll_response = RollResponse { rolls: Vec::new() };
+
+        for dice in roll_request.dice.iter() {
+            let mut rolls = Vec::new();
+            let mut rolls_total = dice.modifier;
+
+            for _ in 0..dice.count {
+                let roll = rng.random_range(1..=dice.sides);
+                rolls.push(roll);
+                rolls_total += roll
+            }
+            roll_response.rolls.push(Rolls {
+                count: dice.count,
+                sides: dice.sides,
+                modifier: dice.modifier,
+                total: rolls_total,
+                rolls,
             });
         }
-        if dice.count < DICE_CONSTRAINTS.count.lower_bound
-            || dice.count > DICE_CONSTRAINTS.count.upper_bound
-        {
-            return Err(RollRequestErrors::InvalidDiceCount { value: dice.count });
-        }
-    }
 
-    Ok(roll_request)
+        Ok(roll_response)
+    }
 }
