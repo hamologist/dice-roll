@@ -1,31 +1,32 @@
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
-struct BoundConstraint {
-    lower_bound: i32,
-    upper_bound: i32,
-}
 
-struct DiceConstraints {
-    sides: BoundConstraint,
-    modifier: BoundConstraint,
-    count: BoundConstraint,
-}
+mod constraints {
+    pub struct BoundConstraint {
+        pub lower_bound: i32,
+        pub upper_bound: i32,
+    }
 
-const DICE_CONSTRAINTS: DiceConstraints = DiceConstraints {
-    sides: BoundConstraint {
-        lower_bound: 1,
-        upper_bound: 1000,
-    },
-    modifier: BoundConstraint {
-        lower_bound: -100,
-        upper_bound: 100,
-    },
-    count: BoundConstraint {
-        lower_bound: 1,
-        upper_bound: 100,
-    },
-};
+    pub mod dice {
+        use crate::constraints::{BoundConstraint as BC};
+
+        pub const SIDES: BC = BC {
+            lower_bound: 1,
+            upper_bound: 1000,
+        };
+
+        pub const MODIFIER: BC = BC {
+            lower_bound: -100,
+            upper_bound: 100,
+        };
+
+        pub const COUNT: BC = BC {
+            lower_bound: 1,
+            upper_bound: 100,
+        };
+    }
+}
 
 pub enum RollRequestErrors {
     InvalidDiceSides { value: i32 },
@@ -34,26 +35,29 @@ pub enum RollRequestErrors {
 }
 
 impl RollRequestErrors {
+
     pub fn to_string(self) -> String {
+        use crate::constraints::dice::{SIDES, MODIFIER, COUNT};
+
         match self {
             RollRequestErrors::InvalidDiceSides { value } => {
                 format!(
                     "Dice sides must be between {} and {}, {} provided",
-                    DICE_CONSTRAINTS.sides.lower_bound, DICE_CONSTRAINTS.sides.upper_bound, value
+                    SIDES.lower_bound, SIDES.upper_bound, value
                 )
             }
             RollRequestErrors::InvalidDiceModifier { value } => {
                 format!(
                     "Dice modifier must be between {} and {}, {} provided",
-                    DICE_CONSTRAINTS.modifier.lower_bound,
-                    DICE_CONSTRAINTS.modifier.upper_bound,
+                    MODIFIER.lower_bound,
+                    MODIFIER.upper_bound,
                     value
                 )
             }
             RollRequestErrors::InvalidDiceCount { value } => {
                 format!(
                     "Dice count must be between {} and {}, {} provided",
-                    DICE_CONSTRAINTS.count.lower_bound, DICE_CONSTRAINTS.count.upper_bound, value
+                    COUNT.lower_bound, COUNT.upper_bound, value
                 )
             }
         }
@@ -88,21 +92,23 @@ pub struct RollResponse {
 
 impl RollRequest {
     fn validate_roll_request(roll_request: RollRequest) -> Result<RollRequest, RollRequestErrors> {
+        use crate::constraints::dice::{SIDES, MODIFIER, COUNT};
+
         for dice in roll_request.dice.iter() {
-            if dice.sides < DICE_CONSTRAINTS.sides.lower_bound
-                || dice.sides > DICE_CONSTRAINTS.sides.upper_bound
+            if dice.sides < SIDES.lower_bound
+                || dice.sides > SIDES.upper_bound
             {
                 return Err(RollRequestErrors::InvalidDiceSides { value: dice.sides });
             }
-            if dice.modifier < DICE_CONSTRAINTS.modifier.lower_bound
-                || dice.modifier > DICE_CONSTRAINTS.modifier.upper_bound
+            if dice.modifier < MODIFIER.lower_bound
+                || dice.modifier > MODIFIER.upper_bound
             {
                 return Err(RollRequestErrors::InvalidDiceModifier {
                     value: dice.modifier,
                 });
             }
-            if dice.count < DICE_CONSTRAINTS.count.lower_bound
-                || dice.count > DICE_CONSTRAINTS.count.upper_bound
+            if dice.count < COUNT.lower_bound
+                || dice.count > COUNT.upper_bound
             {
                 return Err(RollRequestErrors::InvalidDiceCount { value: dice.count });
             }
