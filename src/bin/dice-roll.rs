@@ -1,7 +1,6 @@
 use clap::Parser;
 use clap_stdin::FileOrStdin;
-use dice_roll::{parser};
-
+use dice_roll::parser;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -21,7 +20,6 @@ fn main() {
             return;
         }
     };
-
 
     let roll_request = match parser::parse(input) {
         Ok(roll_request) => roll_request,
@@ -43,13 +41,13 @@ fn main() {
             match serde_json::to_string_pretty(&result.to_json()) {
                 Ok(serialized) => {
                     println!("{}", serialized)
-                },
+                }
                 Err(_) => {
                     println!("Failed to serialize RollResponse into JSON.");
                     return;
                 }
             };
-        },
+        }
         false => {
             println!("{}", result.to_string());
         }

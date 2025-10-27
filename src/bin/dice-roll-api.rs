@@ -1,19 +1,38 @@
-use axum::{
-    http::{StatusCode},
-    extract::rejection::JsonRejection,
-    routing::post,
-    Json,
-    Router
-};
-use dice_roll::{RollRequest};
-use serde_json::{json, Value};
+use axum::{Json, Router, extract::rejection::JsonRejection, http::StatusCode, routing::post};
+use clap::Parser;
+use dice_roll::RollRequest;
+use serde_json::{Value, json};
+
+#[derive(Debug, Parser)]
+struct Args {
+    #[arg(long, default_value = "0.0.0.0")]
+    host: String,
+
+    #[arg(long, default_value_t = 3000)]
+    port: i32,
+}
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
-        .route("/", post(roll));
+    let args = Args::parse();
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let app = Router::new().route("/", post(roll));
+
+    let listener = tokio::net::TcpListener::bind(format!("{}:{}", args.host, args.port))
+        .await
+        .unwrap();
+    let local_addr = match listener.local_addr() {
+        Ok(val) => val,
+        Err(_) => {
+            println!("Failed find local address server is running on.");
+            return;
+        }
+    };
+    println!(
+        "Server running on {}:{}",
+        local_addr.ip(),
+        local_addr.port()
+    );
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -26,7 +45,7 @@ pub async fn roll(payload: Result<Json<RollRequest>, JsonRejection>) -> (StatusC
                 Json(json!({
                     "code": "INVALID_JSON",
                     "message": e.to_string()
-                }))
+                })),
             );
         }
     };

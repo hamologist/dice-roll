@@ -1,7 +1,6 @@
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
-use serde_json::{json};
-
+use serde_json::json;
 
 pub struct BoundConstraint {
     pub lower_bound: i32,
@@ -42,9 +41,7 @@ impl RollRequestErrors {
             RollRequestErrors::InvalidDiceModifier { value } => {
                 format!(
                     "Dice modifier must be between {} and {}, {} provided",
-                    MODIFIER.lower_bound,
-                    MODIFIER.upper_bound,
-                    value
+                    MODIFIER.lower_bound, MODIFIER.upper_bound, value
                 )
             }
             RollRequestErrors::InvalidDiceCount { value } => {
@@ -65,8 +62,8 @@ impl RollRequestErrors {
                         "Dice sides must be between {} and {}, {} provided",
                         SIDES.lower_bound, SIDES.upper_bound, value
                     ),
-                })
-            },
+                });
+            }
             RollRequestErrors::InvalidDiceModifier { value } => {
                 return json!({
                     "code": "INVALID_DICE_MODIFIER",
@@ -74,8 +71,8 @@ impl RollRequestErrors {
                         "Dice modifier must be between {} and {}, {} provided",
                         MODIFIER.lower_bound, MODIFIER.upper_bound, value
                     ),
-                })
-            },
+                });
+            }
             RollRequestErrors::InvalidDiceCount { value } => {
                 return json!({
                     "code": "INVALID_DICE_COUNT",
@@ -83,7 +80,7 @@ impl RollRequestErrors {
                         "Dice count must be between {} and {}, {} provided",
                         COUNT.lower_bound, COUNT.upper_bound, value
                     ),
-                })
+                });
             }
         }
     }
@@ -119,21 +116,15 @@ pub struct RollResponse {
 impl RollRequest {
     fn validate_roll_request(&self) -> Result<&RollRequest, RollRequestErrors> {
         for dice in self.dice.iter() {
-            if dice.sides < SIDES.lower_bound
-                || dice.sides > SIDES.upper_bound
-            {
+            if dice.sides < SIDES.lower_bound || dice.sides > SIDES.upper_bound {
                 return Err(RollRequestErrors::InvalidDiceSides { value: dice.sides });
             }
-            if dice.modifier < MODIFIER.lower_bound
-                || dice.modifier > MODIFIER.upper_bound
-            {
+            if dice.modifier < MODIFIER.lower_bound || dice.modifier > MODIFIER.upper_bound {
                 return Err(RollRequestErrors::InvalidDiceModifier {
                     value: dice.modifier,
                 });
             }
-            if dice.count < COUNT.lower_bound
-                || dice.count > COUNT.upper_bound
-            {
+            if dice.count < COUNT.lower_bound || dice.count > COUNT.upper_bound {
                 return Err(RollRequestErrors::InvalidDiceCount { value: dice.count });
             }
         }
@@ -148,7 +139,10 @@ impl RollRequest {
         };
 
         let mut rng = rand::rng();
-        let mut roll_response = RollResponse { rolls: Vec::new(), total: 0 };
+        let mut roll_response = RollResponse {
+            rolls: Vec::new(),
+            total: 0,
+        };
 
         for dice in roll_request.dice.iter() {
             let mut rolls = Vec::new();
@@ -273,24 +267,18 @@ pub mod parser {
                                     }
                                 };
                                 match result.dice.last_mut() {
-                                    Some(dice) => {
-                                        match current_token_state {
-                                            Tokens::PlusRollOrModifier => {
-                                                dice.modifier = modifier;
-                                            },
-                                            Tokens::MinusModifier => {
-                                                dice.modifier = -modifier
-                                            },
-                                            _ => unreachable!()
+                                    Some(dice) => match current_token_state {
+                                        Tokens::PlusRollOrModifier => {
+                                            dice.modifier = modifier;
                                         }
-                                    }
-                                    None => {
-                                        return Err(ParserErrors::EmptyDiceForModifierError)
-                                    }
+                                        Tokens::MinusModifier => dice.modifier = -modifier,
+                                        _ => unreachable!(),
+                                    },
+                                    None => return Err(ParserErrors::EmptyDiceForModifierError),
                                 }
                                 token = String::new();
                             }
-                            _ => unreachable!()
+                            _ => unreachable!(),
                         }
                         current_token_state = Tokens::Operator;
 
@@ -311,7 +299,7 @@ pub mod parser {
                         b'-' => {
                             current_token_state = Tokens::MinusModifier;
                         }
-                        _ => unreachable!()
+                        _ => unreachable!(),
                     }
                     cursor += 1;
                     continue;
@@ -343,7 +331,9 @@ pub mod parser {
         let count: i32 = match fragment.parse() {
             Ok(num) => num,
             Err(_) => {
-                return Err(RollTokenParserErrors::DiceCountParserError { token: token.clone() });
+                return Err(RollTokenParserErrors::DiceCountParserError {
+                    token: token.clone(),
+                });
             }
         };
 
@@ -362,7 +352,9 @@ pub mod parser {
         let sides: i32 = match fragment.parse() {
             Ok(num) => num,
             Err(_) => {
-                return Err(RollTokenParserErrors::DiceSidesParserError { token: token.clone() });
+                return Err(RollTokenParserErrors::DiceSidesParserError {
+                    token: token.clone(),
+                });
             }
         };
 
@@ -378,19 +370,21 @@ pub mod parser {
     impl ParserErrors {
         pub fn to_string(self) -> String {
             match self {
-                Self::RollParserError(roll_token_parser_errors) => {
-                    match roll_token_parser_errors {
-                        RollTokenParserErrors::DiceCountParserError { token } => {
-                            return format!("Invalid roll provided, {token}. Failed to parse dice count.");
-                        },
-                        RollTokenParserErrors::DiceSidesParserError { token } => {
-                            return format!("Invalid roll provided, {token}. Failed to parse dice sides.");
-                        }
+                Self::RollParserError(roll_token_parser_errors) => match roll_token_parser_errors {
+                    RollTokenParserErrors::DiceCountParserError { token } => {
+                        return format!(
+                            "Invalid roll provided, {token}. Failed to parse dice count."
+                        );
+                    }
+                    RollTokenParserErrors::DiceSidesParserError { token } => {
+                        return format!(
+                            "Invalid roll provided, {token}. Failed to parse dice sides."
+                        );
                     }
                 },
                 Self::EmptyDiceForModifierError => {
                     return "No dice roll provided. Dice roll is in the form \"1d4\"".to_string();
-                },
+                }
                 Self::ModifierParserError { token } => {
                     return format!("Invalid modifier provided, {token}.");
                 }
