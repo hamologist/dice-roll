@@ -23,10 +23,13 @@ pub const COUNT: BC = BC {
     upper_bound: 100,
 };
 
+pub const MAX_DICE: i32 = 100;
+
 pub enum RollRequestErrors {
     InvalidDiceSides { value: i32 },
     InvalidDiceModifier { value: i32 },
     InvalidDiceCount { value: i32 },
+    TooManyDice,
 }
 
 impl RollRequestErrors {
@@ -48,6 +51,12 @@ impl RollRequestErrors {
                 format!(
                     "Dice count must be between {} and {}, {} provided",
                     COUNT.lower_bound, COUNT.upper_bound, value
+                )
+            }
+            RollRequestErrors::TooManyDice => {
+                format!(
+                    "Total dice to roll can not exceed {}.",
+                    MAX_DICE,
                 )
             }
         }
@@ -79,6 +88,15 @@ impl RollRequestErrors {
                     "message": format!(
                         "Dice count must be between {} and {}, {} provided",
                         COUNT.lower_bound, COUNT.upper_bound, value
+                    ),
+                });
+            }
+            RollRequestErrors::TooManyDice => {
+                return json!({
+                    "code": "TOO_MANY_DICE",
+                    "message": format!(
+                        "Total dice to roll can not exceed {}",
+                        MAX_DICE,
                     ),
                 });
             }
@@ -115,6 +133,7 @@ pub struct RollResponse {
 
 impl RollRequest {
     fn validate_roll_request(&self) -> Result<&RollRequest, RollRequestErrors> {
+        let mut total_dice_count = 0;
         for dice in self.dice.iter() {
             if dice.sides < SIDES.lower_bound || dice.sides > SIDES.upper_bound {
                 return Err(RollRequestErrors::InvalidDiceSides { value: dice.sides });
@@ -126,6 +145,11 @@ impl RollRequest {
             }
             if dice.count < COUNT.lower_bound || dice.count > COUNT.upper_bound {
                 return Err(RollRequestErrors::InvalidDiceCount { value: dice.count });
+            }
+
+            total_dice_count += dice.count;
+            if total_dice_count > MAX_DICE {
+                return Err(RollRequestErrors::TooManyDice);
             }
         }
 
