@@ -12,13 +12,13 @@ struct Args {
     as_json: bool,
 }
 
-fn main() -> Result<(), ()> {
+fn main() {
     let args = Args::parse();
     let input = match args.input.contents() {
         Ok(value) => value,
         Err(_) => {
             println!("Failed to read input.");
-            return Err(());
+            return;
         }
     };
 
@@ -27,32 +27,31 @@ fn main() -> Result<(), ()> {
         Ok(roll_request) => roll_request,
         Err(e) => {
             println!("{}", e.to_string());
-            return Err(());
+            return;
         }
     };
     let result = match roll_request.roll_dice() {
         Ok(result) => result,
         Err(e) => {
             println!("{}", e.to_string());
-            return Err(());
+            return;
         }
     };
 
     match args.as_json {
         true => {
-            match result.to_json() {
+            match serde_json::to_string_pretty(&result.to_json()) {
                 Ok(serialized) => {
                     println!("{}", serialized)
+                },
+                Err(_) => {
+                    println!("Failed to serialize RollResponse into JSON.");
+                    return;
                 }
-                Err(e) => {
-                    println!("{}", e.to_string())
-                }
-            }
-        }
+            };
+        },
         false => {
-            println!("{}", result.to_string())
+            println!("{}", result.to_string());
         }
     }
-
-    return Ok(());
 }

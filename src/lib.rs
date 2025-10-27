@@ -1,32 +1,28 @@
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json::{json};
 
 
-mod constraints {
-    pub struct BoundConstraint {
-        pub lower_bound: i32,
-        pub upper_bound: i32,
-    }
-
-    pub mod dice {
-        use crate::constraints::{BoundConstraint as BC};
-
-        pub const SIDES: BC = BC {
-            lower_bound: 1,
-            upper_bound: 1000,
-        };
-
-        pub const MODIFIER: BC = BC {
-            lower_bound: -100,
-            upper_bound: 100,
-        };
-
-        pub const COUNT: BC = BC {
-            lower_bound: 1,
-            upper_bound: 100,
-        };
-    }
+pub struct BoundConstraint {
+    pub lower_bound: i32,
+    pub upper_bound: i32,
 }
+type BC = BoundConstraint;
+
+pub const SIDES: BC = BC {
+    lower_bound: 1,
+    upper_bound: 1000,
+};
+
+pub const MODIFIER: BC = BC {
+    lower_bound: -100,
+    upper_bound: 100,
+};
+
+pub const COUNT: BC = BC {
+    lower_bound: 1,
+    upper_bound: 100,
+};
 
 pub enum RollRequestErrors {
     InvalidDiceSides { value: i32 },
@@ -35,10 +31,7 @@ pub enum RollRequestErrors {
 }
 
 impl RollRequestErrors {
-
     pub fn to_string(self) -> String {
-        use crate::constraints::dice::{SIDES, MODIFIER, COUNT};
-
         match self {
             RollRequestErrors::InvalidDiceSides { value } => {
                 format!(
@@ -59,6 +52,38 @@ impl RollRequestErrors {
                     "Dice count must be between {} and {}, {} provided",
                     COUNT.lower_bound, COUNT.upper_bound, value
                 )
+            }
+        }
+    }
+
+    pub fn to_json(self) -> serde_json::Value {
+        match self {
+            RollRequestErrors::InvalidDiceSides { value } => {
+                return json!({
+                    "code": "INVALID_DICE_SIDES",
+                    "message": format!(
+                        "Dice sides must be between {} and {}, {} provided",
+                        SIDES.lower_bound, SIDES.upper_bound, value
+                    ),
+                })
+            },
+            RollRequestErrors::InvalidDiceModifier { value } => {
+                return json!({
+                    "code": "INVALID_DICE_MODIFIER",
+                    "message": format!(
+                        "Dice modifier must be between {} and {}, {} provided",
+                        MODIFIER.lower_bound, MODIFIER.upper_bound, value
+                    ),
+                })
+            },
+            RollRequestErrors::InvalidDiceCount { value } => {
+                return json!({
+                    "code": "INVALID_DICE_COUNT",
+                    "message": format!(
+                        "Dice count must be between {} and {}, {} provided",
+                        COUNT.lower_bound, COUNT.upper_bound, value
+                    ),
+                })
             }
         }
     }
@@ -92,10 +117,8 @@ pub struct RollResponse {
 }
 
 impl RollRequest {
-    fn validate_roll_request(roll_request: RollRequest) -> Result<RollRequest, RollRequestErrors> {
-        use crate::constraints::dice::{SIDES, MODIFIER, COUNT};
-
-        for dice in roll_request.dice.iter() {
+    fn validate_roll_request(&self) -> Result<&RollRequest, RollRequestErrors> {
+        for dice in self.dice.iter() {
             if dice.sides < SIDES.lower_bound
                 || dice.sides > SIDES.upper_bound
             {
@@ -115,10 +138,10 @@ impl RollRequest {
             }
         }
 
-        Ok(roll_request)
+        Ok(self)
     }
 
-    pub fn roll_dice(self) -> Result<RollResponse, RollRequestErrors> {
+    pub fn roll_dice(&self) -> Result<RollResponse, RollRequestErrors> {
         let roll_request = match RollRequest::validate_roll_request(self) {
             Ok(ok) => ok,
             Err(err) => return Err(err),
@@ -177,11 +200,8 @@ impl RollResponse {
         return result.join(" ");
     }
 
-    pub fn to_json(self) -> Result<String, String> {
-        match serde_json::to_string_pretty(&self) {
-            Ok(serialized) => return Ok(serialized),
-            Err(_) => return Err("Failed to serialize response.".to_string()),
-        }
+    pub fn to_json(self) -> serde_json::Value {
+        return json!(self);
     }
 }
 
