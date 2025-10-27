@@ -54,10 +54,7 @@ impl RollRequestErrors {
                 )
             }
             RollRequestErrors::TooManyDice => {
-                format!(
-                    "Total dice to roll can not exceed {}.",
-                    MAX_DICE,
-                )
+                format!("Total dice to roll can not exceed {}.", MAX_DICE,)
             }
         }
     }
@@ -236,6 +233,9 @@ pub mod parser {
     pub enum ParserErrors {
         RollParserError(RollTokenParserErrors),
         EmptyDiceForModifierError,
+        NoZeroModifiersError,
+        TooManyModifiersError,
+        EmptyModifierError,
         ModifierParserError { token: String },
     }
 
@@ -267,6 +267,9 @@ pub mod parser {
                     continue;
                 }
                 Tokens::Roll | Tokens::PlusRollOrModifier | Tokens::MinusModifier => {
+                    if cursor == input_end && (byte == b'+' || byte == b'-') {
+                        return Err(ParserErrors::EmptyModifierError);
+                    }
                     if cursor == input_end && byte != b'+' && byte != b'-' {
                         token.push(byte as char);
                     }
@@ -284,20 +287,32 @@ pub mod parser {
                                 token = String::new();
                             }
                             Tokens::PlusRollOrModifier | Tokens::MinusModifier => {
+                                if token == "" {
+                                    return Err(ParserErrors::EmptyModifierError);
+                                }
                                 let modifier: i32 = match token.parse() {
                                     Ok(val) => val,
                                     Err(_) => {
                                         return Err(ParserErrors::ModifierParserError { token });
                                     }
                                 };
+                                if modifier == 0 {
+                                    return Err(ParserErrors::NoZeroModifiersError);
+                                }
                                 match result.dice.last_mut() {
-                                    Some(dice) => match current_token_state {
-                                        Tokens::PlusRollOrModifier => {
-                                            dice.modifier = modifier;
+                                    Some(dice) => {
+                                        if dice.modifier != 0 {
+                                            return Err(ParserErrors::TooManyModifiersError);
                                         }
-                                        Tokens::MinusModifier => dice.modifier = -modifier,
-                                        _ => unreachable!(),
-                                    },
+
+                                        match current_token_state {
+                                            Tokens::PlusRollOrModifier => {
+                                                dice.modifier = modifier;
+                                            }
+                                            Tokens::MinusModifier => dice.modifier = -modifier,
+                                            _ => unreachable!(),
+                                        }
+                                    }
                                     None => return Err(ParserErrors::EmptyDiceForModifierError),
                                 }
                                 token = String::new();
@@ -409,8 +424,18 @@ pub mod parser {
                 Self::EmptyDiceForModifierError => {
                     return "No dice roll provided. Dice roll is in the form \"1d4\"".to_string();
                 }
+                Self::EmptyModifierError => {
+                    return "Dice roll includes empty modifier.".to_string();
+                }
                 Self::ModifierParserError { token } => {
                     return format!("Invalid modifier provided, {token}.");
+                }
+                Self::TooManyModifiersError => {
+                    return "Multiple non-zero modifiers are being applied to the same dice roll."
+                        .to_string();
+                }
+                Self::NoZeroModifiersError => {
+                    return "No modifiers with a value of 0.".to_string();
                 }
             }
         }
