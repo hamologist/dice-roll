@@ -1,24 +1,34 @@
 use axum::{Json, Router, extract::rejection::JsonRejection, http::StatusCode, routing::post};
-use clap::Parser;
+use clap::{self, ArgAction};
 use dice_roll::RollRequest;
 use serde_json::{Value, json};
 
-#[derive(Debug, Parser)]
-struct Args {
-    #[arg(long, default_value = "0.0.0.0")]
-    host: String,
-
-    #[arg(long, default_value_t = 3000)]
-    port: i32,
-}
-
 #[tokio::main]
 async fn main() {
-    let args = Args::parse();
+    let matches = clap::Command::new("dice-roll-api")
+        .about("Dice rolls as a service")
+        .arg(
+            clap::Arg::new("host")
+                .long("host")
+                .default_value("0.0.0.0")
+                .action(ArgAction::Set)
+                .help("Host to run the webserver on."),
+        )
+        .arg(
+            clap::Arg::new("port")
+                .long("port")
+                .default_value("3000")
+                .action(ArgAction::Set)
+                .help("Port to run the webserver on."),
+        )
+        .get_matches();
+
+    let host = matches.get_one::<String>("host").unwrap();
+    let port = matches.get_one::<String>("port").unwrap();
 
     let app = Router::new().route("/", post(roll));
 
-    let listener = tokio::net::TcpListener::bind(format!("{}:{}", args.host, args.port))
+    let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port))
         .await
         .unwrap();
     let local_addr = match listener.local_addr() {
