@@ -1,6 +1,6 @@
 # Dice Roll
 **Dice Roll** is a Rust project for simulating dice rolls with varying sides and counts.
-The package includes both an API and CLI frontend for running the dice roll logic.
+The package includes both a Server and CLI frontend for running the dice roll logic.
 
 ## Installation
 
@@ -27,7 +27,7 @@ Next, run a container using the image you built:
 ```bash
 $ docker run -p 3000:3000 --rm dice-roll
 ```
-This will run the `dice-roll-api` command (further detailed below) on host 0.0.0.0 and port 3000.
+This will run the `dice-roll-server` command (further detailed below) on host 0.0.0.0 and port 3000.
 
 If you'd rather run `dice-roll` via the CLI, you can do so using:
 ```bash
@@ -88,8 +88,8 @@ That should return something that looks like the following:
   "total": 19
 }
 ```
-### API
-A `dice-roll-api` command will be installed on your system.
+### Server 
+A `dice-roll-server` command will be installed on your system.
 If executed, the server will start running on host 0.0.0.0 and port 3000 by default.
 These values can be changed using the `--host` and `--port` command line arguments.
 The server takes requests on its "/" endpoint. Requests must be a POST.

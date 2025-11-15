@@ -1,0 +1,13 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "dice-roll"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { workspace = true }
+clap = { workspace = true }
+dice_roll = { path = "../lib" }
