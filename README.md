@@ -1,18 +1,37 @@
 # Dice Roll
 **Dice Roll** is a Rust project for simulating dice rolls with varying sides and counts.
-The package includes both a Server and CLI frontend for running the dice roll logic.
+The project includes both a Server and CLI frontend for running the dice roll logic.
+The project also provides a library for interfacing the project with other Rust projects.
+Lastly, wasm support is included so the dice rolling logic can be run on browser.
+
+## Demo
+For those wanting to get a quick showcase of the project, a demo using the project wasm target can be found [here](https://www.hamologist.com/demos/dice-roll/).
 
 ## Installation
 
-### Local Installation
-You can install the package directly to your machine using cargo:
+### Local installation
+You can install tools from the project directly to your machine using cargo.
+
+CLI:
 ```bash
-$ cargo install --git https://github.com/hamologist/dice-roll.git --branch main
+$ cargo install --git https://github.com/hamologist/dice-roll.git --branch main dice-roll-cli
 ```
 
-Likewise, you can uninstall the application using:
+Server:
 ```bash
-$ cargo uninstall dice-roll
+$ cargo install --git https://github.com/hamologist/dice-roll.git --branch main dice-roll-server
+```
+
+You can uninstall either of the above tools using:
+
+CLI:
+```bash
+$ cargo uninstall dice-roll-cli
+```
+
+Server:
+```bash
+$ cargo uninstall dice-roll-server
 ```
 
 ### Docker
@@ -40,7 +59,7 @@ $ echo '1d20 + 2d4 + 1' | dice-roll
 ```
 
 ## Usage
-Once the dice-roll frontends have been installed, you can start interfacing with both.
+Once the dice-roll frontends have been installed, you can start interfacing with either.
 ### CLI
 A `dice-roll` command will be intalled on your system.
 Help can be pulled up using the help flag:
@@ -125,4 +144,11 @@ curl --location --request POST 'localhost:3000' \
         }
     ]
 }'
+```
+
+## Building the project for wasm
+For those interested in generating the project's wasm a `Makefile` is provided.
+Assuming you've already installed `wasm-bindgen` and `wasm-opt` you can generate a wasm `pkg` directory using:
+```bash
+make wasm
 ```

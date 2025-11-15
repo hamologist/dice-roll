@@ -4,7 +4,9 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-RUN cargo install --path .
+RUN cargo install --path ./cli
+
+RUN cargo install --path ./server
 
 RUN apt update
 
@@ -12,4 +14,4 @@ RUN apt install tini
 
 ENTRYPOINT [ "tini", "--" ]
 
-CMD [ "dice-roll-api" ]
+CMD [ "dice-roll-server" ]

@@ -1,5 +1,5 @@
 [package]
-name = "cli"
+name = "dice-roll-cli"
 version = "0.1.0"
 edition = "2024"
 
@@ -10,4 +10,4 @@ path = "src/main.rs"
 [dependencies]
 serde_json = { workspace = true }
 clap = { workspace = true }
-dice_roll = { path = "../lib" }
+dice-roll = { path = "../lib" }

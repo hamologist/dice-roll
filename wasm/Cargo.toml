@@ -1,12 +1,12 @@
 [package]
-name = "wasm"
+name = "dice-roll-wasm"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 getrandom = { workspace = true, features = ["wasm_js"] }
 wasm-bindgen = "0.2.105"
-dice_roll = { path = "../lib" }
+dice-roll = { path = "../lib" }
 
 [lib]
 crate-type = ["cdylib"]

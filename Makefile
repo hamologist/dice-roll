@@ -4,9 +4,10 @@ wasm:
 	\
 	cargo build \
 		--release \
-		-p wasm \
+		-p dice-roll-wasm \
 		--target wasm32-unknown-unknown && \
-	wasm-bindgen target/wasm32-unknown-unknown/release/wasm.wasm \
+	wasm-bindgen target/wasm32-unknown-unknown/release/dice_roll_wasm.wasm \
+		--out-name wasm \
 		--out-dir pkg \
 		--typescript \
 		--target web && \
